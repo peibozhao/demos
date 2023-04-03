@@ -1,16 +1,18 @@
 
 #include <arpa/inet.h>
+#include <chrono>
 #include <errno.h>
+#include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h>
-#include <string>
-#include <iostream>
 
 const std::string ip = "127.0.0.1";
 const short kPort = 5000;
@@ -18,6 +20,7 @@ const short kPort = 5000;
 int main(int argc, char *argv[]) {
   int sockfd = 0, n = 0;
   char buffer[1024 * 10];
+  uint64_t timestamp = 0;
   struct sockaddr_in serv_addr;
   int ret = 0;
 
@@ -36,9 +39,10 @@ int main(int argc, char *argv[]) {
   std::cout << "connect: " << ret << std::endl;
 
   while (1) {
-    ret = write(sockfd, buffer, sizeof(buffer));
+    timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+    ret = send(sockfd, &timestamp, sizeof(timestamp), MSG_NOSIGNAL);
     std::cout << "write: " << ret << std::endl;
-    sleep(1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
   return 0;

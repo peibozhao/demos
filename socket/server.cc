@@ -1,6 +1,9 @@
 
 #include <arpa/inet.h>
+#include <chrono>
 #include <errno.h>
+#include <iomanip>
+#include <iostream>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +12,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <iostream>
 
 const short kPort = 5000;
 
@@ -18,6 +20,7 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in serv_addr;
 
   char buffer[1024 * 10];
+  uint64_t timestamp;
 
   listenfd = socket(AF_INET, SOCK_STREAM, 0);
   std::cout << "socket: " << listenfd << std::endl;
@@ -36,10 +39,17 @@ int main(int argc, char *argv[]) {
   connfd = accept(listenfd, (struct sockaddr *)NULL, NULL);
   std::cout << "accept: " << connfd << std::endl;
 
+  uint64_t lastnow = 0;
   while (1) {
-    ret = write(connfd, buffer, sizeof(buffer));
-    std::cout << "write: " << ret << std::endl;
-
-    sleep(1);
+    uint64_t now = std::chrono::system_clock::now().time_since_epoch().count();
+    ret = recv(connfd, &timestamp, sizeof(timestamp), 0);
+    std::cout << std::fixed << std::setprecision(3) << "recv: " << ret
+              << " time " << timestamp << " now " << (double)now / 1e9
+              << std::endl;
+    if (lastnow != 0 && double(now - lastnow) / 1e9 > 0.15) {
+      abort();
+    }
+    lastnow = now;
+    // sleep(1);
   }
 }
