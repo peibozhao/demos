@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     std::cout << "epoll_create: " << poll_fd << std::endl;
     struct epoll_event reg_event;
     reg_event.events = EPOLLIN;
+    reg_event.data.fd = connfd;
     ret = epoll_ctl(poll_fd, EPOLL_CTL_ADD, connfd, &reg_event);
     std::cout << "epoll_ctl: " << ret << std::endl;
 
