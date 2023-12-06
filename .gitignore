@@ -7,4 +7,6 @@
 !*.c
 !*.cc
 !*.cpp
+!*.cu
+!Makefile
 
