@@ -39,8 +39,8 @@ __global__ void transformKernel2(float* output,
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    float u = (x + delta) / (float)width;
-    float v = (y + delta) / (float)height;
+    // float u = (x + delta) / (float)width;
+    // float v = (y + delta) / (float)height;
 
     // printf("%f %f\n", u, v);
 

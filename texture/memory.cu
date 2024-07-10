@@ -11,25 +11,25 @@ constexpr int width = 1920;
 __global__ void undistort(const float *dev_src, const float *dev_map1, const float *dev_map2, uint8_t *dev_dst) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-  // float map_x = dev_map1[idx];
-  // float map_y = dev_map2[idx];
+  float map_x = dev_map1[idx];
+  float map_y = dev_map2[idx];
 
-  // int x1 = int(map_x);
-  // int x2 = x1 + 1;
-  // int y1 = int(map_y);
-  // int y2 = y1 + 1;
+  int x1 = int(map_x);
+  int x2 = x1 + 1;
+  int y1 = int(map_y);
+  int y2 = y1 + 1;
 
-  // float scale[4] = {(x2 - map_x) * (y2 - map_y), (map_x - x1) * (y2 - map_y),
-  //   (x2 - map_x) * (map_y - y1), (map_x - x1) * (map_y - y1)};
+  float scale[4] = {(x2 - map_x) * (y2 - map_y), (map_x - x1) * (y2 - map_y),
+    (x2 - map_x) * (map_y - y1), (map_x - x1) * (map_y - y1)};
 
-  // float p[4] = {dev_src[idx], dev_src[idx + 1], dev_src[idx + width], dev_src[idx + width + 1]};
+  float p[4] = {dev_src[idx], dev_src[idx + 1], dev_src[idx + width], dev_src[idx + width + 1]};
 
-  // dev_dst[idx] = scale[0] * p[0] + scale[1] * p[1] + scale[2] * p[2] + scale[3] * p[3];
+  dev_dst[idx] = scale[0] * p[0] + scale[1] * p[1] + scale[2] * p[2] + scale[3] * p[3];
 
-  int map_x = dev_map1[idx];
-  int map_y = dev_map2[idx];
+  // int map_x = dev_map1[idx];
+  // int map_y = dev_map2[idx];
 
-  dev_dst[idx] = dev_src[map_y * width + map_x];
+  // dev_dst[idx] = dev_src[map_y * width + map_x];
 }
 
 int main(int argc, char *argv[])
@@ -60,17 +60,17 @@ int main(int argc, char *argv[])
   src_fstream.read((char *)src, height * width);
   src_fstream.close();
 
-  // float *src_f = new float[height * width];
-  // for (int i = 0; i < height * width; ++i) {
-  //   src_f[i] = src[i];
-  // }
+  float *src_f = new float[height * width];
+  for (int i = 0; i < height * width; ++i) {
+    src_f[i] = src[i];
+  }
 
-  uint8_t *dev_src;
-  cudaMalloc(&dev_src, height * width);
-  cudaMemcpy(dev_src, src, height * width, cudaMemcpyHostToDevice);
-  // float *dev_src;
-  // cudaMalloc(&dev_src, height * width * sizeof(float));
-  // cudaMemcpy(dev_src, src_f, height * width * sizeof(float), cudaMemcpyHostToDevice);
+  // uint8_t *dev_src;
+  // cudaMalloc(&dev_src, height * width);
+  // cudaMemcpy(dev_src, src, height * width, cudaMemcpyHostToDevice);
+  float *dev_src;
+  cudaMalloc(&dev_src, height * width * sizeof(float));
+  cudaMemcpy(dev_src, src_f, height * width * sizeof(float), cudaMemcpyHostToDevice);
 
   float *dev_map1, *dev_map2;
   cudaMalloc(&dev_map1, height * width * sizeof(float));

@@ -65,9 +65,8 @@ int main(int argc, char *argv[])
     src_f[i] = src[i];
   }
 
-  // cudaChannelFormatDesc desc = cudaCreateChannelDesc<uint8_t>(width, height, 0, 0, cudaChannelFormatKindUnsigned);
-  cudaChannelFormatDesc desc = cudaCreateChannelDesc<uint8_t>();
-  // cudaChannelFormatDesc desc = cudaCreateChannelDesc<float>();
+  // cudaChannelFormatDesc desc = cudaCreateChannelDesc<uint8_t>();
+  cudaChannelFormatDesc desc = cudaCreateChannelDesc<float>();
 
   cudaError_t err;
   cudaArray_t dev_src;
@@ -75,8 +74,8 @@ int main(int argc, char *argv[])
   // err = cudaMallocArray(&dev_src, &desc, width, height, cudaArrayTextureGather);
   std::cout << "cudaMallocArray " << err << std::endl;
 
-  err = cudaMemcpy2DToArray(dev_src, 0, 0, src, width, width, height, cudaMemcpyHostToDevice);
-  // err = cudaMemcpy2DToArray(dev_src, 0, 0, src_f, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice);
+  // err = cudaMemcpy2DToArray(dev_src, 0, 0, src, width, width, height, cudaMemcpyHostToDevice);
+  err = cudaMemcpy2DToArray(dev_src, 0, 0, src_f, width * sizeof(float), width * sizeof(float), height, cudaMemcpyHostToDevice);
   std::cout << "cudaMemcpy2DToArray " << err << std::endl;
 
   cudaTextureObject_t texture_src;
@@ -134,7 +133,7 @@ int main(int argc, char *argv[])
   cudaMemcpy(dst, dev_dst, height * width, cudaMemcpyDeviceToHost);
 
 
-  std::ofstream ofs("output.gray", std::ios::binary);
+  std::ofstream ofs("output2.gray", std::ios::binary);
   ofs.write((char *)dst, width * height);
   ofs.close();
 
