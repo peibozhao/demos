@@ -1,10 +1,12 @@
 
+
 #include <cuda_runtime_api.h>
 #include <iostream>
+#include <surface_functions.h>
 
 #define CHECK(cu_ret) \
   if (cu_ret != cudaSuccess) { \
-    std::cout << "cuda error: " << cu_ret << std::endl; \
+    std::cout << "line: " << __LINE__ << ". cuda error: " << cu_ret << std::endl; \
     exit(-1); \
   }
 
@@ -25,6 +27,27 @@ __global__ void transformKernel(float* output,
 
     // Read from texture and write to global memory
     output[y * width + x] = tex2D<float>(texObj, u, v);
+}
+
+// Simple transformation kernel
+__global__ void transformKernel2(float* output,
+                                cudaSurfaceObject_t surObj,
+                                int width, int height,
+                                float delta)
+{
+    // Calculate normalized texture coordinates
+    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    float u = (x + delta) / (float)width;
+    float v = (y + delta) / (float)height;
+
+    // printf("%f %f\n", u, v);
+
+    // Read from texture and write to global memory
+    // output[y * width + x] = tex2D<float>(texObj, u, v);
+    // surf2Dread<float>(output + y * width + x, texObj, u, v);
+    surf2Dread(&output[y * width * x], surObj, x * 4, y, cudaBoundaryModeTrap);
 }
 
 // Host code
@@ -50,7 +73,7 @@ int main()
     cudaChannelFormatDesc channelDesc =
         cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
     cudaArray_t cuArray;
-    CHECK(cudaMallocArray(&cuArray, &channelDesc, width, height));
+    CHECK(cudaMallocArray(&cuArray, &channelDesc, width, height, cudaArraySurfaceLoadStore));
 
     // Set pitch of the source (the width in memory in bytes of the 2D array pointed
     // to by src, including padding), we dont have any padding
@@ -77,8 +100,10 @@ int main()
     texDesc.normalizedCoords = 1;
 
     // Create texture object
-    cudaTextureObject_t texObj = 0;
-    CHECK(cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL));
+    // cudaTextureObject_t texObj = 0;
+    // CHECK(cudaCreateTextureObject(&texObj, &resDesc, &texDesc, NULL));
+    cudaSurfaceObject_t surObj = 0;
+    CHECK(cudaCreateSurfaceObject(&surObj, &resDesc));
 
     // Allocate result of transformation in device memory
     float *output;
@@ -88,7 +113,7 @@ int main()
     dim3 threadsperBlock(16, 16);
     dim3 numBlocks((width + threadsperBlock.x - 1) / threadsperBlock.x,
                     (height + threadsperBlock.y - 1) / threadsperBlock.y);
-    transformKernel<<<numBlocks, threadsperBlock>>>(output, texObj, width, height, delta);
+    transformKernel2<<<numBlocks, threadsperBlock>>>(output, surObj, width, height, delta);
 
     float *h_ret = (float *)std::malloc(sizeof(float) * width * height);
     memset(h_ret, 0, sizeof(float) * width * height);
@@ -107,7 +132,7 @@ int main()
 
 
     // Destroy texture object
-    CHECK(cudaDestroyTextureObject(texObj));
+    // CHECK(cudaDestroyTextureObject(texObj));
 
     // Free device memory
     CHECK(cudaFreeArray(cuArray));
